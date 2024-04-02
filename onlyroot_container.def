@@ -1,0 +1,75 @@
+Bootstrap: library
+From: ubuntu:22.04
+Stage: build
+
+%setup
+    touch /file1
+    touch ${SINGULARITY_ROOTFS}/file2
+
+%files
+    /file1
+    thisroot.sh /hepsw/thisroot_2.sh
+
+%environment
+    #export LISTEN_PORT=12345
+    export LC_ALL=C
+    export PYTHIA8DATA=/usr/local/share/Pythia8/xmldoc
+    export EVTGEN_ROOT=/usr/local
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    export RAPIDSIM_ROOT=/usr/local
+    cd /hepsw/root
+    source bin/thisroot_2.sh
+
+%post
+    apt-get update && apt-get install -y netcat
+    apt install -y wget
+    apt install -y curl git
+    #NOW=`date`
+    #echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+    apt install -y cmake build-essential
+    apt install -y rsync
+    apt install -y libtool
+    apt install -y snapd
+    apt install -y gfortran
+    apt install -y vim
+
+    apt install -y dpkg-dev cmake g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python3.10 libssl-dev
+    apt install -y python2.7
+
+    apt install -y python3-pip
+
+    mkdir /usr/local/lib/python3.10/site-packages
+
+    cd /
+    #mkdir hepsw
+
+    cd /hepsw
+    wget https://root.cern/download/root_v6.30.04.Linux-centosstream9-x86_64-gcc11.3.tar.gz
+    tar -zxvf root_v6.30.04.Linux-centosstream9-x86_64-gcc11.3.tar.gz
+    cd root
+    #. bin/thisroot.sh
+    # There is a bug in thisroot.sh provided by root. This patch should fix it.
+    cp /hepsw/thisroot_2.sh bin/thisroot_2.sh
+    . bin/thisroot_2.sh
+
+
+
+%runscript
+    echo "Container was created $NOW"
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+%startscript
+    #nc -lp $LISTEN_PORT
+
+%test
+    echo "Hello world!"
+
+%labels
+    Author shah.rukh.qasim@cern.ch
+    Version v1.0.1
+
+%help
+    This container is only for testing. Don't use it.
+
+
