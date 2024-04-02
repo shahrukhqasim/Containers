@@ -132,7 +132,8 @@ Stage: build
     cp cudnn-linux-x86_64-8.6.0.163_cuda11-archive/include/* /usr/local/cuda-11.8/include/
     cp cudnn-linux-x86_64-8.6.0.163_cuda11-archive/lib/* /usr/local/cuda-11.8/lib64/
 
-
+    rm cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+    rm cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
 
 %runscript
     echo "Container was created $NOW"
@@ -147,22 +148,10 @@ Stage: build
 
 %labels
     Author shah.rukh.qasim@cern.ch
-    Version v2.7.1
+    Version v2.8.1
 
 %help
-    This container is designed for https://github.com/shahrukhqasim/rla_simulation. The following packages are available
-    in the container:
-    1. EvtGen (with Tauola and Photos)
-    2. Rapidsim
-    3. Root framework
-    4. HepMC3
-    5. Pythia8
-
-    In addition, the container also includes CUDA framework (11.8) as well cuDNN (8.6.0). However, these remain
-    untested. Until then, please use the Docker container provided by TensorFlow.
-
-    Installation of tensorflow and pytorch is purposefully omitted to allow user flexibility and local installation.
-    With all the requirements met, it should be straightforward to install them direcly via python3-pip.
+    This container is designed to allow running of RapidSim and related software with ease.
 
 
 
