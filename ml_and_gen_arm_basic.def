@@ -1,0 +1,48 @@
+BootStrap: docker
+From: nvcr.io/nvidia/tensorflow:24.07-tf2-py3-igpu
+#Stage: build
+
+%setup
+    touch /file1
+    touch ${SINGULARITY_ROOTFS}/file2
+
+%files
+    /file1
+    /file1 /opt
+    thisroot.sh /hepsw/thisroot_2.sh
+
+%environment
+    #export LISTEN_PORT=12345
+    export LC_ALL=C
+    export PYTHIA8DATA=/usr/local/share/Pythia8/xmldoc
+    export EVTGEN_ROOT=/usr/local
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    export RAPIDSIM_ROOT=/usr/local
+    cd /hepsw/root
+    source bin/thisroot_2.sh
+    export GEANT4_DATA_DIR=/usr/local/share/Geant4/data
+
+%post
+
+
+%runscript
+    echo "ML+Sim Container"
+    echo "Author: Shah Rukh Qasim <shah.rukh.qasim@cern.ch>."
+    echo "TensorFlow 2.17 [CUDA 12.3], PyTorch 2.4.0 [CUDA 12.4], Geant4 11.2.2"
+    exec /bin/bash
+
+%startscript
+    #nc -lp $LISTEN_PORT
+
+%test
+    echo "Hello world!"
+
+%labels
+    Author shah.rukh.qasim@cern.ch
+    Version v3.2
+
+%help
+    This container is designed to allow running of RapidSim and related software with ease.
+
+
+

@@ -1,0 +1,174 @@
+Bootstrap: library
+From: ubuntu:22.04
+Stage: build
+
+%setup
+    touch /file1
+    touch ${SINGULARITY_ROOTFS}/file2
+
+%files
+    /file1
+    /file1 /opt
+    thisroot.sh /hepsw/thisroot_2.sh
+
+
+%environment
+    #export LISTEN_PORT=12345
+    export LC_ALL=C
+    export PYTHIA8DATA=/usr/local/share/Pythia8/xmldoc
+    export EVTGEN_ROOT=/usr/local
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    export RAPIDSIM_ROOT=/usr/local
+    cd /hepsw/root
+    source bin/thisroot_2.sh
+    export GEANT4_DATA_DIR=/usr/local/share/Geant4/data
+    export LD_PRELOAD=/usr/local/lib/libG4zlib.so:/usr/local/lib/libG4ptl.so.2.3.3:/usr/local/lib/libG4clhep.so:/usr/local/lib/libG4global.so:/usr/local/lib/libG4intercoms.so:/usr/local/lib/libG4graphics_reps.so:/usr/local/lib/libG4interfaces.so:/usr/local/lib/libG4materials.so:/usr/local/lib/libG4particles.so:/usr/local/lib/libG4analysis.so:/usr/local/lib/libG4geometry.so:/usr/local/lib/libG4track.so:/usr/local/lib/libG4geomtext.so:/usr/local/lib/libG4digits_hits.so:/usr/local/lib/libG4processes.so:/usr/local/lib/libG4parmodels.so:/usr/local/lib/libG4tracking.so:/usr/local/lib/libG4event.so:/usr/local/lib/libG4run.so:/usr/local/lib/libG4readout.so:/usr/local/lib/libG4mctruth.so:/usr/local/lib/libG4error_propagation.so:/usr/local/lib/libG4modeling.so:/usr/local/lib/libG4vis_management.so:/usr/local/lib/libG4FR.so:/usr/local/lib/libG4visHepRep.so:/usr/local/lib/libG4RayTracer.so:/usr/local/lib/libG4Tree.so:/usr/local/lib/libG4VRML.so:/usr/local/lib/libG4physicslists.so:/usr/local/lib/libG4GMocren.so:/usr/local/lib/libG4ToolsSG.so:/usr/local/lib/libG4ptl.so.2:/usr/local/lib/libG4ptl.so
+
+
+%post
+    apt-get update && apt-get install -y netcat
+    apt install -y wget
+    apt install -y curl git
+    #NOW=`date`
+    #echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+    apt install -y cmake build-essential
+    apt install -y rsync
+    apt install -y libtool
+    apt install -y snapd
+    apt install -y gfortran
+    apt install -y vim
+
+    apt install -y dpkg-dev cmake g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev python3.10 libssl-dev
+    apt install -y python2.7
+
+    apt install -y python3-pip
+
+    mkdir /usr/local/lib/python3.10/site-packages
+
+    cd /
+
+    cd /hepsw
+    wget https://root.cern/download/root_v6.30.04.Linux-centosstream9-x86_64-gcc11.3.tar.gz
+    tar -zxvf root_v6.30.04.Linux-centosstream9-x86_64-gcc11.3.tar.gz
+    cd root
+    # There is a bug in thisroot.sh provided by root. This patch should fix it.
+    cp /hepsw/thisroot_2.sh bin/thisroot_2.sh
+    . bin/thisroot_2.sh
+
+    cd /hepsw
+    wget https://pythia.org/download/pythia83/pythia8311.tgz
+    tar -zxvf pythia8311.tgz
+    cd pythia8311
+    make -j
+    make install
+
+    cd /hepsw
+    # The server was dead on June 27, 2024 10:39, so I switched to gitlab
+    # wget http://hepmc.web.cern.ch/hepmc/releases/HepMC3-3.2.6.tar.gz
+    # tar -xzf HepMC3-3.2.6.tar.gz
+    wget https://gitlab.cern.ch/hepmc/HepMC3/-/archive/3.2.6/HepMC3-3.2.6.tar.gz
+    tar -xzf HepMC3-3.2.6.tar.gz
+    mkdir hepmc3-build
+    cd hepmc3-build
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local   \
+        -DHEPMC3_ENABLE_ROOTIO:BOOL=OFF            \
+        -DHEPMC3_ENABLE_PROTOBUFIO:BOOL=OFF        \
+        -DHEPMC3_ENABLE_TEST:BOOL=OFF              \
+        -DHEPMC3_INSTALL_INTERFACES:BOOL=ON        \
+        -DHEPMC3_BUILD_STATIC_LIBS:BOOL=OFF        \
+        -DHEPMC3_BUILD_DOCS:BOOL=OFF     \
+        -DHEPMC3_ENABLE_PYTHON:BOOL=ON   \
+        -DHEPMC3_PYTHON_VERSIONS=2.7,3.10     \
+        -DHEPMC3_Python_SITEARCH310=/usr/local/lib/python3.10/site-packages \
+        -DHEPMC3_Python_SITEARCH27=/usr/local/lib/python2.7/site-packages \
+        ../HepMC3-3.2.6
+    make -j
+    make install
+
+    cd /hepsw
+    wget http://tauolapp.web.cern.ch/tauolapp/resources/TAUOLA.1.1.8/TAUOLA.1.1.8-LHC.tar.gz
+    tar -zxvf TAUOLA.1.1.8-LHC.tar.gz
+    cd TAUOLA
+    ./configure --with-hepmc3 --without-hepmc --prefix=/usr/local --with-pythia8
+    ./config.status
+    make -j
+    make install
+
+
+    cd /hepsw
+    wget http://photospp.web.cern.ch/photospp/resources/PHOTOS.3.64/PHOTOS.3.64.tar.gz
+    tar -zxvf PHOTOS.3.64.tar.gz
+    cd PHOTOS
+    ./configure --without-hepmc --prefix=/usr/local
+    ./config.status
+    make -j
+    make install
+
+    cd /hepsw
+    wget https://evtgen.hepforge.org/downloads?f=EvtGen-02.02.01.tar.gz -O evtgen.tar.gz
+    tar -zxvf evtgen.tar.gz
+    cd EvtGen/*
+    bash setupEvtGen.sh
+    cd /usr/local
+    ln -s share/EvtGen/evt.pdl evt.pdl
+
+    cd /hepsw
+    wget https://github.com/gcowan/RapidSim/archive/refs/tags/v1.5.tar.gz -O RapidSim.tar.gz
+    tar -zxvf RapidSim.tar.gz
+    cd RapidSim-1.5
+    export EVTGEN_ROOT=/usr/local
+    mkdir build
+    cd build
+    cmake ../ -DCMAKE_INSTALL_PREFIX=/usr/local
+    make -j
+    make install
+
+    #cd /hepsw
+    #wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+    #mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+    #wget https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+    #dpkg -i cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+    #cp /var/cuda-repo-ubuntu2204-11-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
+    #apt update
+    #DEBIAN_FRONTEND=noninteractive apt install -y cuda
+
+    #wget https://developer.download.nvidia.com/compute/redist/cudnn/v8.6.0/local_installers/11.8/cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
+    #tar -xvf cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
+    #cp cudnn-linux-x86_64-8.6.0.163_cuda11-archive/include/* /usr/local/cuda-11.8/include/
+    #cp cudnn-linux-x86_64-8.6.0.163_cuda11-archive/lib/* /usr/local/cuda-11.8/lib64/
+
+    #rm cuda-repo-ubuntu2204-11-8-local_11.8.0-520.61.05-1_amd64.deb
+    #rm cudnn-linux-x86_64-8.6.0.163_cuda11-archive.tar.xz
+
+
+    cd /hepsw
+    wget https://gitlab.cern.ch/geant4/geant4/-/archive/v11.2.2/geant4-v11.2.2.tar.gz
+    tar -zxvf geant4-v11.2.2.tar.gz
+    cd geant4-v11.2.2
+    mkdir build
+    cd build
+    cmake -DGEANT4_INSTALL_DATA=ON ..
+    make -j4 # Note that higher number of processes might crash the builder
+    make install
+
+
+%runscript
+    echo "Container was created $NOW"
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+%startscript
+    #nc -lp $LISTEN_PORT
+
+%test
+    echo "Hello world!"
+
+%labels
+    Author shah.rukh.qasim@cern.ch
+    Version v2.8.1
+
+%help
+    This container is designed to allow running of RapidSim and related software with ease.
+
+
+

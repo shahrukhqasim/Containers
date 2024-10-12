@@ -1,0 +1,41 @@
+BootStrap: docker
+From: tensorflow/tensorflow:2.17.0-gpu
+
+%post
+    # Update package list and install any additional packages if needed
+    apt-get update && apt-get install -y \
+        vim \
+        git \
+        wget \
+        htop
+    apt update
+    apt install -y cmake
+    pip3 install torch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 --index-url https://download.pytorch.org/whl/cu124
+    apt install -y nvidia-cuda-dev
+    export FORCE_CUDA=1
+    export TORCH_CUDA_ARCH_LIST="5.0;6.0;7.0;7.5;8.0;8.6;9.0+PTX"
+
+    # This thing is effing slow. This is because it does not have an option to run multiple processes in parallel
+    # for the compilation and it takes forever. Unbelievable.
+    pip3 install "git+https://github.com/facebookresearch/pytorch3d.git@stable"
+#
+#    # Clean up
+#    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+%environment
+    export LC_ALL=C
+    export LANG=C
+    export PATH=/usr/local/bin:$PATH
+
+%runscript
+    echo "ML Container"
+    echo "Author: Shah Rukh Qasim <shah.rukh.qasim@cern.ch>."
+    echo "TensorFlow 2.17 [CUDA 12.3], PyTorch 2.4.0 [CUDA 12.4]"
+    exec /bin/bash
+
+%labels
+    Author Shah Rukh Qasim
+    Version 1.8
+    Description This Singularity container can be used to run ML applications based in TensorFlow or PyTorch
+
+
